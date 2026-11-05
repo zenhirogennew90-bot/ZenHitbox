@@ -1,470 +1,381 @@
---[[
-    Project: Custom Floating UI & Game Enhancer (Speed & Hitbox)
-    Compatible: Delta Executor / Mobile Environment
-    Design: Modern Dark Glassmorphic with Purple Accents
-]]--
-
 -- Services
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
-local LocalPlayer = Players.LocalPlayer
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- Configuration / State Variables
-local Config = {
-    SpeedBoostEnabled = false,
-    SpeedValue = 18.9,
-    HitboxEnabled = false,
-    ShowHitbox = false,
-    HitboxSize = 20, -- Default safe expanded size
-    HitboxTransparency = 0.7
+-- Bersihkan UI lama agar tidak duplikat
+if playerGui:FindFirstChild("ZendropkickHitboxMenu") then
+    playerGui.ZendropkickHitboxMenu:Destroy()
+end
+
+-- ScreenGui Utama
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ZendropkickHitboxMenu"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+-- Tombol Toggle Mengambang (Floating Button)
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "ToggleBtn"
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 20, 0, 150)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Text = "⚡"
+toggleBtn.TextSize = 22
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.Parent = screenGui
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(1, 0)
+btnCorner.Parent = toggleBtn
+
+local btnStroke = Instance.new("UIStroke")
+btnStroke.Color = Color3.fromRGB(140, 80, 255)
+btnStroke.Thickness = 2
+btnStroke.Parent = toggleBtn
+
+-- Frame Menu Utama
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 340, 0, 460)
+mainFrame.Position = UDim2.new(0.5, -170, 0.5, -230)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 12)
+frameCorner.Parent = mainFrame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = Color3.fromRGB(55, 45, 80)
+frameStroke.Thickness = 1.5
+frameStroke.Parent = mainFrame
+
+-- Header Menu (Drag Area)
+local header = Instance.new("Frame")
+header.Name = "Header"
+header.Size = UDim2.new(1, 0, 0, 45)
+header.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+header.BorderSizePixel = 0
+header.Parent = mainFrame
+
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 12)
+headerCorner.Parent = header
+
+local fixHeader = Instance.new("Frame")
+fixHeader.Size = UDim2.new(1, 0, 0, 10)
+fixHeader.Position = UDim2.new(0, 0, 1, -10)
+fixHeader.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+fixHeader.BorderSizePixel = 0
+fixHeader.Parent = header
+
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(1, -20, 1, 0)
+titleText.Position = UDim2.new(0, 15, 0, 0)
+titleText.BackgroundTransparency = 1
+titleText.TextColor3 = Color3.fromRGB(230, 220, 255)
+titleText.Text = "Zendropkick | Hitbox & Color Panel"
+titleText.TextSize = 13
+titleText.Font = Enum.Font.GothamBold
+titleText.TextXAlignment = Enum.TextXAlignment.Left
+titleText.Parent = header
+
+-- Scrolling Container
+local scrollContainer = Instance.new("ScrollingFrame")
+scrollContainer.Size = UDim2.new(1, -16, 1, -60)
+scrollContainer.Position = UDim2.new(0, 8, 0, 52)
+scrollContainer.BackgroundTransparency = 1
+scrollContainer.BorderSizePixel = 0
+scrollContainer.ScrollBarThickness = 3
+scrollContainer.ScrollBarImageColor3 = Color3.fromRGB(140, 80, 255)
+scrollContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollContainer.Parent = mainFrame
+
+local uiLayout = Instance.new("UIListLayout")
+uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
+uiLayout.Padding = UDim.new(0, 10)
+uiLayout.Parent = scrollContainer
+
+uiLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scrollContainer.CanvasSize = UDim2.new(0, 0, 0, uiLayout.AbsoluteContentSize.Y + 15)
+end)
+
+-- Fungsi Tombol Standar
+local function createButton(name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
+    btn.TextColor3 = Color3.fromRGB(225, 225, 240)
+    btn.Text = name
+    btn.TextSize = 13
+    btn.Font = Enum.Font.Medium
+    btn.Parent = scrollContainer
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(50, 45, 70)
+    stroke.Thickness = 1
+    stroke.Parent = btn
+
+    btn.MouseButton1Click:Connect(function()
+        local tweenClick = TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(110, 60, 220)})
+        tweenClick:Play()
+        tweenClick.Completed:Wait()
+        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(25, 25, 38)}):Play()
+        
+        if callback then callback() end
+    end)
+end
+
+-- Fungsi Slider Akurat & Anti-Bug
+local function createSlider(name, min, max, default, callback)
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Size = UDim2.new(1, 0, 0, 55)
+    sliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
+    sliderFrame.Parent = scrollContainer
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = sliderFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(50, 45, 70)
+    stroke.Thickness = 1
+    stroke.Parent = sliderFrame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -20, 0, 20)
+    label.Position = UDim2.new(0, 10, 0, 6)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(220, 220, 235)
+    label.Text = name
+    label.TextSize = 12
+    label.Font = Enum.Font.Medium
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = sliderFrame
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0, 60, 0, 20)
+    valueLabel.Position = UDim2.new(1, -70, 0, 6)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.TextColor3 = Color3.fromRGB(180, 140, 255)
+    valueLabel.Text = tostring(default)
+    valueLabel.TextSize = 12
+    valueLabel.Font = Enum.Font.Bold
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = sliderFrame
+
+    local sliderBar = Instance.new("Frame")
+    sliderBar.Size = UDim2.new(1, -20, 0, 6)
+    sliderBar.Position = UDim2.new(0, 10, 0, 36)
+    sliderBar.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    sliderBar.BorderSizePixel = 0
+    sliderBar.Parent = sliderFrame
+
+    local barCorner = Instance.new("UICorner")
+    barCorner.CornerRadius = UDim.new(1, 0)
+    barCorner.Parent = sliderBar
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(140, 80, 255)
+    fill.BorderSizePixel = 0
+    fill.Parent = sliderBar
+
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    fillCorner.Parent = fill
+
+    local dragging = false
+
+    local function updateValue(input)
+        local barPos = sliderBar.AbsolutePosition.X
+        local barSize = sliderBar.AbsoluteSize.X
+        local percentage = math.clamp((input.Position.X - barPos) / barSize, 0, 1)
+        local value = math.floor((min + (max - min) * percentage) * 10) / 10 -- Support desimal halus
+        
+        fill.Size = UDim2.new(percentage, 0, 1, 0)
+        valueLabel.Text = tostring(value)
+        
+        if callback then callback(value) end
+    end
+
+    sliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            updateValue(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateValue(input)
+        end
+    end)
+end
+
+-- Variabel State Hitbox & Warna
+local hitboxEnabled = false
+local hitboxSize = 5
+local hitboxTransparency = 0.5
+local hitboxColor = Color3.fromRGB(148, 0, 211) -- Default Ungu
+
+-- Pilihan Warna Hitbox (Ungu, Pink, Biru, Merah)
+local colors = {
+    ["Ungu"] = Color3.fromRGB(148, 0, 211),
+    ["Pink"] = Color3.fromRGB(255, 105, 180),
+    ["Biru"] = Color3.fromRGB(0, 191, 255),
+    ["Merah"] = Color3.fromRGB(255, 0, 0)
 }
 
--- Cleanup existing UI if executed multiple times
-if CoreGui:FindFirstChild("SgxCustomMenu") then
-    CoreGui.SgxCustomMenu:Destroy()
+-- UI Container untuk Pilihan Warna
+local colorFrame = Instance.new("Frame")
+colorFrame.Size = UDim2.new(1, 0, 0, 50)
+colorFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
+colorFrame.Parent = scrollContainer
+
+local colorCorner = Instance.new("UICorner")
+colorCorner.CornerRadius = UDim.new(0, 8)
+colorCorner.Parent = colorFrame
+
+local colorStroke = Instance.new("UIStroke")
+colorStroke.Color = Color3.fromRGB(50, 45, 70)
+colorStroke.Thickness = 1
+colorStroke.Parent = colorFrame
+
+local colorLayout = Instance.new("UIListLayout")
+colorLayout.FillDirection = Enum.FillDirection.Horizontal
+colorLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+colorLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+colorLayout.Padding = UDim.new(0, 8)
+colorLayout.Parent = colorFrame
+
+for name, col in pairs(colors) do
+    local cBtn = Instance.new("TextButton")
+    cBtn.Size = UDim2.new(0, 65, 0, 32)
+    cBtn.BackgroundColor3 = col
+    cBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    cBtn.Text = name
+    cBtn.TextSize = 11
+    cBtn.Font = Enum.Font.Bold
+    cBtn.Parent = colorFrame
+
+    local cCorner = Instance.new("UICorner")
+    cCorner.CornerRadius = UDim.new(0, 6)
+    cCorner.Parent = cBtn
+
+    cBtn.MouseButton1Click:Connect(function()
+        hitboxColor = col
+        print("Hitbox Color changed to: " .. name)
+    end)
 end
 
--- ScreenGui Setup
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SgxCustomMenu"
-ScreenGui.ResetOnSpawn = false
-pcall(function()
-    ScreenGui.Parent = CoreGui
+-- Implementasi Fitur Tombol Toggle Hitbox
+createButton("Toggle Hitbox (ON/OFF)", function()
+    hitboxEnabled = not hitboxEnabled
+    print("Hitbox Status: " .. tostring(hitboxEnabled))
 end)
-if not ScreenGui.Parent then
-    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+createSlider("Hitbox Size", 2, 20, 5, function(val)
+    hitboxSize = val
+end)
+
+createSlider("Hitbox Transparency", 0, 1, 0.5, function(val)
+    hitboxTransparency = val
+end)
+
+-- Loop Utama untuk Aplikasi Hitbox secara Real-time
+RunService.RenderStepped:Connect(function()
+    if not hitboxEnabled then return end
+    
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local rootPart = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                rootPart.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+                rootPart.Transparency = hitboxTransparency
+                rootPart.Color = hitboxColor
+                rootPart.Material = Enum.Material.ForceField
+                rootPart.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- Animasi Buka/Tutup Menu
+local isOpen = false
+local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+
+local function toggleMenu()
+    isOpen = not isOpen
+    if isOpen then
+        mainFrame.Visible = true
+        mainFrame.Size = UDim2.new(0, 0, 0, 0)
+        mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+        
+        TweenService:Create(mainFrame, tweenInfo, {
+            Size = UDim2.new(0, 340, 0, 460),
+            Position = UDim2.new(0.5, -170, 0.5, -230)
+        }):Play()
+        
+        TweenService:Create(toggleBtn, tweenInfo, {Rotation = 180}):Play()
+    else
+        local closeTween = TweenService:Create(mainFrame, tweenInfo, {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0)
+        })
+        closeTween:Play()
+        TweenService:Create(toggleBtn, tweenInfo, {Rotation = 0}):Play()
+        closeTween.Completed:Wait()
+        mainFrame.Visible = false
+    end
 end
 
--- Floating Toggle Button (To open/close menu)
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Name = "ToggleBtn"
-ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
-ToggleBtn.Position = UDim2.new(0, 30, 0, 150)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-ToggleBtn.Text = "⚡"
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.TextSize = 22
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.Parent = ScreenGui
+toggleBtn.MouseButton1Click:Connect(toggleMenu)
 
-local BtnCorner = Instance.new("UICorner")
-BtnCorner.CornerRadius = UDim.new(0, 12)
-BtnCorner.Parent = ToggleBtn
+-- Sistem Dragging Header Menu
+local draggingFrame, dragStart, startPos
 
--- Main Window Frame
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 340, 0, 420)
-MainFrame.Position = UDim2.new(0.5, -170, 0.5, -210)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-MainFrame.BorderSizePixel = 0
-MainFrame.Visible = true
-MainFrame.Parent = ScreenGui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
-MainCorner.Parent = MainFrame
-
--- Make Window Draggable for Mobile
-local dragging, dragInput, dragStart, startPos
-MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingFrame = true
         dragStart = input.Position
-        startPos = MainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+        startPos = mainFrame.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+    if draggingFrame and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X, 
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
     end
 end)
 
-ToggleBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
-
--- Container for Sections (ScrollingFrame)
-local Container = Instance.new("ScrollingFrame")
-Container.Size = UDim2.new(1, -20, 1, -20)
-Container.Position = UDim2.new(0, 10, 0, 10)
-Container.BackgroundTransparency = 1
-Container.CanvasSize = UDim2.new(0, 0, 0, 550)
-Container.ScrollBarThickness = 4
-Container.Parent = MainFrame
-
-local UIList = Instance.new("UIListLayout")
-UIList.SortOrder = Enum.SortOrder.LayoutOrder
-UIList.Padding = UDim.new(0, 12)
-UIList.Parent = Container
-
--- Helper function to create Section Cards
-local function createSection(titleText)
-    local section = Instance.new("Frame")
-    section.Size = UDim2.new(1, 0, 0, 180)
-    section.BackgroundColor3 = Color3.fromRGB(26, 26, 33)
-    section.BorderSizePixel = 0
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
-    corner.Parent = section
-    
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -20, 0, 35)
-    title.Position = UDim2.new(0, 12, 0, 5)
-    title.BackgroundTransparency = 1
-    title.Text = titleText
-    title.TextColor3 = Color3.fromRGB(240, 240, 255)
-    title.TextSize = 16
-    title.Font = Enum.Font.GothamBold
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = section
-    
-    local innerList = Instance.new("UIListLayout")
-    innerList.SortOrder = Enum.SortOrder.LayoutOrder
-    innerList.Padding = UDim.new(0, 10)
-    innerList.Parent = section
-    
-    return section
-end
-
--- ==================== SECTION 1: BOOST ====================
-local BoostSection = createSection("🚀 Boost")
-BoostSection.Size = UDim2.new(1, 0, 0, 150)
-BoostSection.Parent = Container
-
--- Speed Slider Label
-local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Size = UDim2.new(1, -24, 0, 20)
-SpeedLabel.Position = UDim2.new(0, 12, 0, 40)
-SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.Text = "Speed Boost: 18.9/200"
-SpeedLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
-SpeedLabel.TextSize = 13
-SpeedLabel.Font = Enum.Font.GothamMedium
-SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-SpeedLabel.Parent = BoostSection
-
--- Speed Slider Track
-local SpeedBar = Instance.new("Frame")
-SpeedBar.Size = UDim2.new(1, -24, 0, 10)
-SpeedBar.Position = UDim2.new(0, 12, 0, 65)
-SpeedBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-SpeedBar.BorderSizePixel = 0
-SpeedBar.Parent = BoostSection
-
-local SpeedBarCorner = Instance.new("UICorner")
-SpeedBarCorner.CornerRadius = UDim.new(1, 0)
-SpeedBarCorner.Parent = SpeedBar
-
-local SpeedFill = Instance.new("Frame")
-SpeedFill.Size = UDim2.new(18.9/200, 0, 1, 0)
-SpeedFill.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
-SpeedFill.BorderSizePixel = 0
-SpeedFill.Parent = SpeedBar
-
-local SpeedFillCorner = Instance.new("UICorner")
-SpeedFillCorner.CornerRadius = UDim.new(1, 0)
-SpeedFillCorner.Parent = SpeedFill
-
--- Interactive Slider Button for Speed
-local SpeedBtn = Instance.new("TextButton")
-SpeedBtn.Size = UDim2.new(1, 0, 1, 0)
-SpeedBtn.BackgroundTransparency = 1
-SpeedBtn.Text = ""
-SpeedBtn.Parent = SpeedBar
-
-SpeedBtn.MouseButton1Down:Connect(function()
-    local connection
-    connection = RunService.RenderStepped:Connect(function()
-        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:GetTouchPositions()[1] then
-            local mouseLoc = UserInputService:GetMouseLocation()
-            local absPos = SpeedBar.AbsolutePosition
-            local absSize = SpeedBar.AbsoluteSize
-            local pos = math.clamp((mouseLoc.X - absPos.X) / absSize.X, 0, 1)
-            
-            Config.SpeedValue = math.floor((pos * 200) * 10) / 10
-            if Config.SpeedValue < 1 then Config.SpeedValue = 1 end
-            
-            SpeedFill.Size = UDim2.new(Config.SpeedValue/200, 0, 1, 0)
-            SpeedLabel.Text = "Speed Boost: " .. tostring(Config.SpeedValue) .. "/200"
-        else
-            connection:Disconnect()
-        end
-    end)
-end)
-
--- Speed Toggle
-local SpeedToggleContainer = Instance.new("Frame")
-SpeedToggleContainer.Size = UDim2.new(1, -24, 0, 30)
-SpeedToggleContainer.Position = UDim2.new(0, 12, 0, 95)
-SpeedToggleContainer.BackgroundTransparency = 1
-SpeedToggleContainer.Parent = BoostSection
-
-local SpeedToggleLabel = Instance.new("TextLabel")
-SpeedToggleLabel.Size = UDim2.new(0.8, 0, 1, 0)
-SpeedToggleLabel.BackgroundTransparency = 1
-SpeedToggleLabel.Text = "Activate Speed Boost"
-SpeedToggleLabel.TextColor3 = Color3.fromRGB(220, 220, 240)
-SpeedToggleLabel.TextSize = 14
-SpeedToggleLabel.Font = Enum.Font.Gotham
-SpeedToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-SpeedToggleLabel.Parent = SpeedToggleContainer
-
-local SpeedToggleBtn = Instance.new("TextButton")
-SpeedToggleBtn.Size = UDim2.new(0, 46, 0, 24)
-SpeedToggleBtn.Position = UDim2.new(1, -46, 0.5, -12)
-SpeedToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
-SpeedToggleBtn.Text = ""
-SpeedToggleBtn.Parent = SpeedToggleContainer
-
-local SpeedToggleCorner = Instance.new("UICorner")
-SpeedToggleCorner.CornerRadius = UDim.new(1, 0)
-SpeedToggleCorner.Parent = SpeedToggleBtn
-
-local SpeedToggleCircle = Instance.new("Frame")
-SpeedToggleCircle.Size = UDim2.new(0, 20, 0, 20)
-SpeedToggleCircle.Position = UDim2.new(0, 2, 0.5, -10)
-SpeedToggleCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-SpeedToggleCircle.Parent = SpeedToggleBtn
-
-local CircleCorner1 = Instance.new("UICorner")
-CircleCorner1.CornerRadius = UDim.new(1, 0)
-CircleCorner1.Parent = SpeedToggleCircle
-
-SpeedToggleBtn.MouseButton1Click:Connect(function()
-    Config.SpeedBoostEnabled = not Config.SpeedBoostEnabled
-    local targetPos = Config.SpeedBoostEnabled and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
-    local targetColor = Config.SpeedBoostEnabled and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(60, 60, 75)
-    
-    TweenService:Create(SpeedToggleCircle, TweenInfo.new(0.2), {Position = targetPos}):Play()
-    TweenService:Create(SpeedToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
-end)
-
-
--- ==================== SECTION 2: HITBOX ====================
-local HitboxSection = createSection("❤️ Hitbox")
-HitboxSection.Size = UDim2.new(1, 0, 0, 230)
-HitboxSection.Parent = Container
-
--- Helper to create toggles
-local function createToggle(name, defaultState, callback)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, -24, 0, 28)
-    container.BackgroundTransparency = 1
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.8, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(220, 220, 240)
-    label.TextSize = 14
-    label.Font = Enum.Font.Gotham
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = container
-    
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 46, 0, 24)
-    btn.Position = UDim2.new(1, -46, 0.5, -12)
-    btn.BackgroundColor3 = defaultState and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(60, 60, 75)
-    btn.Text = ""
-    btn.Parent = container
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = btn
-    
-    local circle = Instance.new("Frame")
-    circle.Size = UDim2.new(0, 20, 0, 20)
-    circle.Position = defaultState and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
-    circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    circle.Parent = btn
-    
-    local cCorner = Instance.new("UICorner")
-    cCorner.CornerRadius = UDim.new(1, 0)
-    cCorner.Parent = circle
-    
-    local state = defaultState
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        local targetPos = state and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
-        local targetColor = state and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(60, 60, 75)
-        
-        TweenService:Create(circle, TweenInfo.new(0.2), {Position = targetPos}):Play()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
-        
-        callback(state)
-    end)
-    
-    return container
-end
-
--- Toggle 1: Hitbox Expander
-local hbToggle = createToggle("Hitbox Expander", false, function(state)
-    Config.HitboxEnabled = state
-end)
-hbToggle.Position = UDim2.new(0, 12, 0, 40)
-hbToggle.Parent = HitboxSection
-
--- Toggle 2: Show Hitbox
-local showToggle = createToggle("Show Hitbox", false, function(state)
-    Config.ShowHitbox = state
-end)
-showToggle.Position = UDim2.new(0, 12, 0, 75)
-showToggle.Parent = HitboxSection
-
--- Hitbox Size Slider
-local SizeLabel = Instance.new("TextLabel")
-SizeLabel.Size = UDim2.new(1, -24, 0, 20)
-SizeLabel.Position = UDim2.new(0, 12, 0, 110)
-SizeLabel.BackgroundTransparency = 1
-SizeLabel.Text = "Hitbox Size: 20/100"
-SizeLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
-SizeLabel.TextSize = 13
-SizeLabel.Font = Enum.Font.GothamMedium
-SizeLabel.TextXAlignment = Enum.TextXAlignment.Left
-SizeLabel.Parent = HitboxSection
-
-local SizeBar = Instance.new("Frame")
-SizeBar.Size = UDim2.new(1, -24, 0, 10)
-SizeBar.Position = UDim2.new(0, 12, 0, 135)
-SizeBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-SizeBar.BorderSizePixel = 0
-SizeBar.Parent = HitboxSection
-
-local SizeBarCorner = Instance.new("UICorner")
-SizeBarCorner.CornerRadius = UDim.new(1, 0)
-SizeBarCorner.Parent = SizeBar
-
-local SizeFill = Instance.new("Frame")
-SizeFill.Size = UDim2.new(20/100, 0, 1, 0)
-SizeFill.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
-SizeFill.BorderSizePixel = 0
-SizeFill.Parent = SizeBar
-
-local SizeFillCorner = Instance.new("UICorner")
-SizeFillCorner.CornerRadius = UDim.new(1, 0)
-SizeFillCorner.Parent = SizeFill
-
-local SizeBtn = Instance.new("TextButton")
-SizeBtn.Size = UDim2.new(1, 0, 1, 0)
-SizeBtn.BackgroundTransparency = 1
-SizeBtn.Text = ""
-SizeBtn.Parent = SizeBar
-
-SizeBtn.MouseButton1Down:Connect(function()
-    local connection
-    connection = RunService.RenderStepped:Connect(function()
-        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:GetTouchPositions()[1] then
-            local mouseLoc = UserInputService:GetMouseLocation()
-            local absPos = SizeBar.AbsolutePosition
-            local absSize = SizeBar.AbsoluteSize
-            local pos = math.clamp((mouseLoc.X - absPos.X) / absSize.X, 0, 1)
-            
-            Config.HitboxSize = math.floor(pos * 100)
-            if Config.HitboxSize < 1 then Config.HitboxSize = 1 end
-            
-            SizeFill.Size = UDim2.new(Config.HitboxSize/100, 0, 1, 0)
-            SizeLabel.Text = "Hitbox Size: " .. tostring(Config.HitboxSize) .. "/100"
-        else
-            connection:Disconnect()
-        end
-    end)
-end)
-
--- Hitbox Transparency Slider
-local TransLabel = Instance.new("TextLabel")
-TransLabel.Size = UDim2.new(1, -24, 0, 20)
-TransLabel.Position = UDim2.new(0, 12, 0, 155)
-TransLabel.BackgroundTransparency = 1
-TransLabel.Text = "Hitbox Transparency: 0.7/1"
-TransLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
-TransLabel.TextSize = 13
-TransLabel.Font = Enum.Font.GothamMedium
-TransLabel.TextXAlignment = Enum.TextXAlignment.Left
-TransLabel.Parent = HitboxSection
-
-local TransBar = Instance.new("Frame")
-TransBar.Size = UDim2.new(1, -24, 0, 10)
-TransBar.Position = UDim2.new(0, 12, 0, 180)
-TransBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-TransBar.BorderSizePixel = 0
-TransBar.Parent = HitboxSection
-
-local TransBarCorner = Instance.new("UICorner")
-TransBarCorner.CornerRadius = UDim.new(1, 0)
-TransBarCorner.Parent = TransBar
-
-local TransFill = Instance.new("Frame")
-TransFill.Size = UDim2.new(0.7, 0, 1, 0)
-TransFill.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
-TransFill.BorderSizePixel = 0
-TransFill.Parent = TransBar
-
-local TransFillCorner = Instance.new("UICorner")
-TransFillCorner.CornerRadius = UDim.new(1, 0)
-TransFillCorner.Parent = TransFill
-
-local TransBtn = Instance.new("TextButton")
-TransBtn.Size = UDim2.new(1, 0, 1, 0)
-TransBtn.BackgroundTransparency = 1
-TransBtn.Text = ""
-TransBtn.Parent = TransBar
-
-TransBtn.MouseButton1Down:Connect(function()
-    local connection
-    connection = RunService.RenderStepped:Connect(function()
-        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:GetTouchPositions()[1] then
-            local mouseLoc = UserInputService:GetMouseLocation()
-            local absPos = TransBar.AbsolutePosition
-            local absSize = TransBar.AbsoluteSize
-            local pos = math.clamp((mouseLoc.X - absPos.X) / absSize.X, 0, 1)
-            
-            Config.HitboxTransparency = math.floor((pos * 1) * 10) / 10
-            
-            TransFill.Size = UDim2.new(Config.HitboxTransparency, 0, 1, 0)
-            TransLabel.Text = "Hitbox Transparency: " .. tostring(Config.HitboxTransparency) .. "/1"
-        else
-            connection:Disconnect()
-        end
-    end)
-end)
-
-
--- ==================== CORE EXECUTION LOOPS ====================
-RunService.RenderStepped:Connect(function()
-    -- Speed Boost Logic
-    if Config.SpeedBoostEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = Config.SpeedValue
-    end
-    
-    -- Hitbox Expander Logic
-    if Config.HitboxEnabled then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = player.Character.HumanoidRootPart
-                hrp.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
-                hrp.CanCollide = false
-                if Config.ShowHitbox then
-                    hrp.Transparency = Config.HitboxTransparency
-                    hrp.Color = Color3.fromRGB(139, 92, 246)
-                else
-                    hrp.Transparency = 1
-                end
-            end
-        end
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingFrame = false
     end
 end)
-
-print("✅ UI Successfully Loaded & Ready!")
