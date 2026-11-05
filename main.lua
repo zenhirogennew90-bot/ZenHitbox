@@ -1,354 +1,268 @@
--- =================================================================
--- [[ ULTIMATE ELITE HITBOX MASTER V4 - NYXAR VANE ARCHITECTURE ]]
--- [[ Fixed UI Overlap & Clipping with Automatic UIListLayout Engine ]]
--- =================================================================
+-- Pastikan Environment Mendukung
+if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local UserInputService = game:GetService("UserInputService")
-
 local LocalPlayer = Players.LocalPlayer
 
--- Konfigurasi State Hitbox
-local HBConfig = {
-    Enabled = false,
-    Size = 10,
-    Transparency = 0.5,
-    Color = Color3.fromRGB(138, 43, 226), -- Default Ungu Premium
-    ColorName = "Ungu",
-    VisualVisible = true
+-- Konfigurasi Pengaturan Hitbox & Warna
+local HitboxSettings = {
+    Enabled = true,          -- Hitbox Expander (Toggle On)
+    ShowHitbox = false,      -- Show Hitbox (Toggle Off)
+    Size = 25,               -- Hitbox Size
+    Transparency = 0.7,      -- Hitbox Transparency
+    CurrentColorIndex = 1    -- Indeks warna aktif
 }
 
--- Hapus UI lama jika ada agar tidak duplikat
-if CoreGui:FindFirstChild("NyxarFixedHitboxUI") then
-    CoreGui.NyxarFixedHitboxUI:Destroy()
-end
-
--- Main ScreenGui
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NyxarFixedHitboxUI"
-ScreenGui.Parent = CoreGui
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
--- =================================================================
--- 1. FLOATING TRIGGER BUTTON (Tombol Mengambang)
--- =================================================================
-local FloatingBtn = Instance.new("TextButton")
-FloatingBtn.Name = "FloatingTrigger"
-FloatingBtn.Size = UDim2.new(0, 50, 0, 50)
-FloatingBtn.Position = UDim2.new(0, 20, 0.35, 0)
-FloatingBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-FloatingBtn.Font = Enum.Font.GothamBold
-FloatingBtn.Text = "⚡"
-FloatingBtn.TextColor3 = Color3.fromRGB(240, 240, 255)
-FloatingBtn.TextSize = 22
-FloatingBtn.Active = true
-FloatingBtn.Draggable = true
-FloatingBtn.Parent = ScreenGui
-
-Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(1, 0)
-
-local FloatStroke = Instance.new("UIStroke")
-FloatStroke.Color = Color3.fromRGB(138, 43, 226)
-FloatStroke.Thickness = 2.2
-FloatStroke.Parent = FloatingBtn
-
--- =================================================================
--- 2. MAIN MENU PANEL (Persegi, Compact & Rapi)
--- =================================================================
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainPanel"
-MainFrame.Size = UDim2.new(0, 310, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -155, 0.5, -200)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Visible = false
-MainFrame.Parent = ScreenGui
-
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 14)
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(60, 60, 80)
-MainStroke.Thickness = 1.5
-MainStroke.Parent = MainFrame
-
--- Header Menu
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 45)
-Header.BackgroundTransparency = 1
-Header.Parent = MainFrame
-
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -40, 1, 0)
-TitleLabel.Position = UDim2.new(0, 14, 0, 0)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.Text = "⚡ Hitbox Master Elite"
-TitleLabel.TextColor3 = Color3.fromRGB(245, 245, 255)
-TitleLabel.TextSize = 15
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Parent = Header
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -38, 0.5, -15)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
-CloseBtn.TextSize = 13
-CloseBtn.Parent = Header
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
-
--- =================================================================
--- 3. SCROLLING CONTAINER DENGAN UIListLayout (Anti-Overlap)
--- =================================================================
-local Container = Instance.new("ScrollingFrame")
-Container.Name = "ControlContainer"
-Container.Size = UDim2.new(1, -20, 1, -55)
-Container.Position = UDim2.new(0, 10, 0, 50)
-Container.BackgroundTransparency = 1
-Container.BorderSizePixel = 0
-Container.CanvasSize = UDim2.new(0, 0, 0, 0) -- Otomatis diatur oleh UIListLayout
-Container.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
-Container.ScrollBarThickness = 3
-Container.ScrollBarImageColor3 = Color3.fromRGB(138, 43, 226)
-Container.Parent = MainFrame
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 10) -- Jarak antar elemen sangat rapi
-UIListLayout.Parent = Container
-
--- Logika Buka/Tutup Menu
-local menuIsOpen = false
-FloatingBtn.MouseButton1Click:Connect(function()
-    menuIsOpen = not menuIsOpen
-    MainFrame.Visible = menuIsOpen
-    FloatStroke.Color = menuIsOpen and Color3.fromRGB(80, 255, 120) or Color3.fromRGB(138, 43, 226)
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    menuIsOpen = false
-    MainFrame.Visible = false
-    FloatStroke.Color = Color3.fromRGB(138, 43, 226)
-end)
-
--- Helper Fungsi Pembuat Section Header
-local function createSectionHeader(text, order)
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 0, 18)
-    lbl.BackgroundTransparency = 1
-    lbl.Font = Enum.Font.GothamSemibold
-    lbl.Text = text
-    lbl.TextColor3 = Color3.fromRGB(160, 160, 185)
-    lbl.TextSize = 11
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.LayoutOrder = order
-    lbl.Parent = Container
-    return lbl
-end
-
--- =================================================================
--- 4. KOMPONEN-KOMPONEN MENU UTAMA
--- =================================================================
-
--- A. Status Eksekusi Hitbox
-createSectionHeader("STATUS EKSEKUSI", 1)
-local MasterToggle = Instance.new("TextButton")
-MasterToggle.Size = UDim2.new(1, 0, 0, 38)
-MasterToggle.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
-MasterToggle.Font = Enum.Font.GothamBold
-MasterToggle.Text = "OFF"
-MasterToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
-MasterToggle.TextSize = 13
-MasterToggle.LayoutOrder = 2
-MasterToggle.Parent = Container
-Instance.new("UICorner", MasterToggle).CornerRadius = UDim.new(0, 8)
-
-MasterToggle.MouseButton1Click:Connect(function()
-    HBConfig.Enabled = not HBConfig.Enabled
-    if HBConfig.Enabled then
-        MasterToggle.Text = "ACTIVE [ON]"
-        MasterToggle.TextColor3 = Color3.fromRGB(80, 255, 120)
-        MasterToggle.BackgroundColor3 = Color3.fromRGB(20, 45, 30)
-    else
-        MasterToggle.Text = "OFF"
-        MasterToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
-        MasterToggle.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
-    end
-end)
-
--- B. Tampilan Visual
-createSectionHeader("TAMPILAN VISUAL", 3)
-local VisualToggle = Instance.new("TextButton")
-VisualToggle.Size = UDim2.new(1, 0, 0, 36)
-VisualToggle.BackgroundColor3 = Color3.fromRGB(22, 30, 45)
-VisualToggle.Font = Enum.Font.GothamSemibold
-VisualToggle.Text = "Visual: ON (Terlihat)"
-VisualToggle.TextColor3 = Color3.fromRGB(100, 180, 255)
-VisualToggle.TextSize = 12
-VisualToggle.LayoutOrder = 4
-VisualToggle.Parent = Container
-Instance.new("UICorner", VisualToggle).CornerRadius = UDim.new(0, 8)
-
-VisualToggle.MouseButton1Click:Connect(function()
-    HBConfig.VisualVisible = not HBConfig.VisualVisible
-    if HBConfig.VisualVisible then
-        VisualToggle.Text = "Visual: ON (Terlihat)"
-        VisualToggle.TextColor3 = Color3.fromRGB(100, 180, 255)
-    else
-        VisualToggle.Text = "Visual: OFF (Hidden / Fungsi Aktif)"
-        VisualToggle.TextColor3 = Color3.fromRGB(170, 170, 170)
-    end
-end)
-
--- C. Warna Hitbox (Ungu, Biru, Merah)
-createSectionHeader("WARNA HITBOX", 5)
-local ColorContainer = Instance.new("Frame")
-ColorContainer.Size = UDim2.new(1, 0, 0, 36)
-ColorContainer.BackgroundTransparency = 1
-ColorContainer.LayoutOrder = 6
-ColorContainer.Parent = Container
-
-local colors = {
-    {Name = "Ungu", Color = Color3.fromRGB(138, 43, 226)},
-    {Name = "Biru", Color = Color3.fromRGB(0, 140, 255)},
-    {Name = "Merah", Color = Color3.fromRGB(255, 45, 45)}
+-- Daftar Pilihan Warna (Ungu, Merah, Biru, Hijau, Kuning, Putih)
+local ColorList = {
+    {Name = "Ungu", Color = Color3.fromRGB(147, 51, 234)},
+    {Name = "Merah", Color = Color3.fromRGB(239, 68, 68)},
+    {Name = "Biru", Color = Color3.fromRGB(59, 130, 246)},
+    {Name = "Hijau", Color = Color3.fromRGB(34, 197, 94)},
+    {Name = "Kuning", Color = Color3.fromRGB(234, 179, 8)},
+    {Name = "Putih", Color = Color3.fromRGB(255, 255, 255)}
 }
-local colorButtons = {}
 
-for i, col in ipairs(colors) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.31, 0, 1, 0)
-    btn.Position = UDim2.new((i-1)*0.345, 0, 0, 0)
-    btn.BackgroundColor3 = col.Color
-    btn.Font = Enum.Font.GothamBold
-    btn.Text = col.Name
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 12
-    btn.Parent = ColorContainer
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+-- Fungsi Utama untuk Memperbesar Hitbox Karakter Lain
+local function applyHitbox(character)
+    if not character then return end
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 255, 255)
-    stroke.Thickness = (col.Name == "Ungu") and 2 or 0
-    stroke.Parent = btn
-    
-    btn.MouseButton1Click:Connect(function()
-        HBConfig.Color = col.Color
-        HBConfig.ColorName = col.Name
-        for _, b in pairs(colorButtons) do
-            b.UIStroke.Thickness = 0
+    if humanoidRootPart then
+        if HitboxSettings.Enabled then
+            humanoidRootPart.Size = Vector3.new(HitboxSettings.Size, HitboxSettings.Size, HitboxSettings.Size)
+            
+            if HitboxSettings.ShowHitbox then
+                humanoidRootPart.Transparency = HitboxSettings.Transparency
+                -- Menggunakan warna yang dipilih dari daftar
+                humanoidRootPart.Color = ColorList[HitboxSettings.CurrentColorIndex].Color
+                humanoidRootPart.Material = Enum.Material.Neon
+            else
+                humanoidRootPart.Transparency = 1
+            end
+            
+            humanoidRootPart.CanCollide = false
+        else
+            humanoidRootPart.Size = Vector3.new(2, 2, 1)
+            humanoidRootPart.Transparency = 1
         end
-        stroke.Thickness = 2
-    end)
-    btn.UIStroke = stroke
-    table.insert(colorButtons, btn)
+    end
 end
 
--- D. Slider Ukuran Hitbox
-local SizeHeader = createSectionHeader("UKURAN HITBOX [Studs: 10]", 7)
-local SizeBg = Instance.new("Frame")
-SizeBg.Size = UDim2.new(1, 0, 0, 24)
-SizeBg.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
-SizeBg.LayoutOrder = 8
-SizeBg.Parent = Container
-Instance.new("UICorner", SizeBg).CornerRadius = UDim.new(0, 6)
-
-local SizeFill = Instance.new("Frame")
-SizeFill.Size = UDim2.new(0.3, 0, 1, 0)
-SizeFill.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-SizeFill.Parent = SizeBg
-Instance.new("UICorner", SizeFill).CornerRadius = UDim.new(0, 6)
-
--- E. Slider Transparansi Hitbox
-local TransHeader = createSectionHeader("TRANSPARANSI VISUAL [0.5]", 9)
-local TransBg = Instance.new("Frame")
-TransBg.Size = UDim2.new(1, 0, 0, 24)
-TransBg.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
-TransBg.LayoutOrder = 10
-TransBg.Parent = Container
-Instance.new("UICorner", TransBg).CornerRadius = UDim.new(0, 6)
-
-local TransFill = Instance.new("Frame")
-TransFill.Size = UDim2.new(0.5, 0, 1, 0)
-TransFill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
-TransFill.Parent = TransBg
-Instance.new("UICorner", TransFill).CornerRadius = UDim.new(0, 6)
-
--- =================================================================
--- 5. ROBUST TOUCH SLIDER LOGIC (Mulus & Akurat di HP)
--- =================================================================
-local activeSizeInput = nil
-local activeTransInput = nil
-
-SizeBg.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        activeSizeInput = input
-    end
-end)
-
-TransBg.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        activeTransInput = input
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input == activeSizeInput then activeSizeInput = nil end
-    if input == activeTransInput then activeTransInput = nil end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == activeSizeInput then
-        local relativeX = math.clamp((input.Position.X - SizeBg.AbsolutePosition.X) / SizeBg.AbsoluteSize.X, 0, 1)
-        SizeFill.Size = UDim2.new(relativeX, 0, 1, 0)
-        HBConfig.Size = math.floor(2 + (relativeX * 28))
-        SizeHeader.Text = "UKURAN HITBOX [Studs: " .. HBConfig.Size .. "]"
-    elseif input == activeTransInput then
-        local relativeX = math.clamp((input.Position.X - TransBg.AbsolutePosition.X) / TransBg.AbsoluteSize.X, 0, 1)
-        TransFill.Size = UDim2.new(relativeX, 0, 1, 0)
-        HBConfig.Transparency = math.floor(relativeX * 10) / 10
-        TransHeader.Text = "TRANSPARANSI VISUAL [" .. HBConfig.Transparency .. "]"
-    end
-end)
-
--- =================================================================
--- 6. CORE ENGINE LOOP (Eksekusi Hitbox & Render Aman)
--- =================================================================
+-- Loop untuk Memantau Pemain Lain
 RunService.RenderStepped:Connect(function()
+    if not HitboxSettings.Enabled then return end
+    
     pcall(function()
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
-                local char = player.Character
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                
-                if hrp and hum and hum.Health > 0 then
-                    if HBConfig.Enabled then
-                        hrp.Size = Vector3.new(HBConfig.Size, HBConfig.Size, HBConfig.Size)
-                        hrp.CanCollide = false
-                        
-                        if HBConfig.VisualVisible then
-                            hrp.Transparency = HBConfig.Transparency
-                            hrp.Color = HBConfig.Color
-                            hrp.Material = Enum.Material.Neon
-                        else
-                            hrp.Transparency = 1 -- Hitbox berfungsi normal, tapi visual tidak terlihat
-                        end
-                    else
-                        hrp.Size = Vector3.new(2, 2, 1)
-                        hrp.Transparency = 1
-                    end
-                end
+                applyHitbox(player.Character)
             end
         end
     end)
 end)
 
-print("⚡ Elite Hitbox Master V4 (Fixed Layout) Loaded Successfully!")
+-- ==========================================
+-- PEMBUATAN UI TEMA HITAM - UNGU (MODERN)
+-- ==========================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "HitboxExpanderUI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+-- Diperbesar sedikit tingginya (320px) untuk menampung tombol ganti warna
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 320, 0, 310)
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -155)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22) -- Hitam Elegan
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Header Menu
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(26, 26, 33)
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 8)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "❤️ Hitbox Expander"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 15
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- Fungsi Pembuat Tombol Toggle
+local function createToggle(name, defaultState, callback, yPos)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0, 200, 0, 30)
+    Label.Position = UDim2.new(0, 20, 0, yPos)
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.TextColor3 = Color3.fromRGB(210, 210, 210)
+    Label.TextSize = 13
+    Label.Font = Enum.Font.Gotham
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = MainFrame
+
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Size = UDim2.new(0, 44, 0, 22)
+    ToggleBtn.Position = UDim2.new(1, -64, 0, yPos + 4)
+    ToggleBtn.BackgroundColor3 = defaultState and Color3.fromRGB(147, 51, 234) or Color3.fromRGB(50, 50, 60)
+    ToggleBtn.Text = ""
+    ToggleBtn.AutoButtonColor = false
+    ToggleBtn.Parent = MainFrame
+
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(1, 0)
+    BtnCorner.Parent = ToggleBtn
+
+    local Circle = Instance.new("Frame")
+    Circle.Size = UDim2.new(0, 16, 0, 16)
+    Circle.Position = defaultState and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+    Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Circle.Parent = ToggleBtn
+
+    local CircleCorner = Instance.new("UICorner")
+    CircleCorner.CornerRadius = UDim.new(1, 0)
+    CircleCorner.Parent = Circle
+
+    local active = defaultState
+    ToggleBtn.MouseButton1Click:Connect(function()
+        active = not active
+        callback(active)
+        
+        if active then
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(147, 51, 234)
+            Circle:TweenPosition(UDim2.new(1, -19, 0.5, -8), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        else
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            Circle:TweenPosition(UDim2.new(0, 3, 0.5, -8), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        end
+    end)
+end
+
+-- Render Toggle 1 & 2
+createToggle("Hitbox Expander", HitboxSettings.Enabled, function(state)
+    HitboxSettings.Enabled = state
+end, 55)
+
+createToggle("Show Hitbox", HitboxSettings.ShowHitbox, function(state)
+    HitboxSettings.ShowHitbox = state
+end, 100)
+
+-- Hitbox Size Controls
+local SizeLabel = Instance.new("TextLabel")
+SizeLabel.Size = UDim2.new(0, 200, 0, 20)
+SizeLabel.Position = UDim2.new(0, 20, 0, 140)
+SizeLabel.BackgroundTransparency = 1
+SizeLabel.Text = "Hitbox Size: " .. HitboxSettings.Size
+SizeLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
+SizeLabel.TextSize = 13
+SizeLabel.Font = Enum.Font.Gotham
+SizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+SizeLabel.Parent = MainFrame
+
+local SizeBarBg = Instance.new("Frame")
+SizeBarBg.Size = UDim2.new(1, -40, 0, 8)
+SizeBarBg.Position = UDim2.new(0, 20, 0, 165)
+SizeBarBg.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+SizeBarBg.BorderSizePixel = 0
+SizeBarBg.Parent = MainFrame
+Instance.new("UICorner", SizeBarBg).CornerRadius = UDim.new(1, 0)
+
+local SizeBarFill = Instance.new("Frame")
+SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 100, 0, 1, 0)
+SizeBarFill.BackgroundColor3 = Color3.fromRGB(147, 51, 234)
+SizeBarFill.BorderSizePixel = 0
+SizeBarFill.Parent = SizeBarBg
+Instance.new("UICorner", SizeBarFill).CornerRadius = UDim.new(1, 0)
+
+local BtnPlus = Instance.new("TextButton")
+BtnPlus.Size = UDim2.new(0, 25, 0, 22)
+BtnPlus.Position = UDim2.new(1, -45, 0, 138)
+BtnPlus.BackgroundColor3 = Color3.fromRGB(147, 51, 234)
+BtnPlus.Text = "+"
+BtnPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+BtnPlus.Font = Enum.Font.GothamBold
+BtnPlus.Parent = MainFrame
+Instance.new("UICorner", BtnPlus).CornerRadius = UDim.new(0, 4)
+
+local BtnMin = Instance.new("TextButton")
+BtnMin.Size = UDim2.new(0, 25, 0, 22)
+BtnMin.Position = UDim2.new(1, -75, 0, 138)
+BtnMin.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+BtnMin.Text = "-"
+BtnMin.TextColor3 = Color3.fromRGB(255, 255, 255)
+BtnMin.Font = Enum.Font.GothamBold
+BtnMin.Parent = MainFrame
+Instance.new("UICorner", BtnMin).CornerRadius = UDim.new(0, 4)
+
+BtnPlus.MouseButton1Click:Connect(function()
+    if HitboxSettings.Size < 100 then
+        HitboxSettings.Size = HitboxSettings.Size + 5
+        SizeLabel.Text = "Hitbox Size: " .. HitboxSettings.Size
+        SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 100, 0, 1, 0)
+    end
+end)
+
+BtnMin.MouseButton1Click:Connect(function()
+    if HitboxSettings.Size > 5 then
+        HitboxSettings.Size = HitboxSettings.Size - 5
+        SizeLabel.Text = "Hitbox Size: " .. HitboxSettings.Size
+        SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 100, 0, 1, 0)
+    end
+end)
+
+-- ==========================================
+-- FITUR BARU: TOMBOL GANTI WARNA HITBOX
+-- ==========================================
+local ColorLabel = Instance.new("TextLabel")
+ColorLabel.Size = UDim2.new(0, 200, 0, 20)
+ColorLabel.Position = UDim2.new(0, 20, 0, 195)
+ColorLabel.BackgroundTransparency = 1
+ColorLabel.Text = "Hitbox Color: " .. ColorList[HitboxSettings.CurrentColorIndex].Name
+ColorLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
+ColorLabel.TextSize = 13
+ColorLabel.Font = Enum.Font.Gotham
+ColorLabel.TextXAlignment = Enum.TextXAlignment.Left
+ColorLabel.Parent = MainFrame
+
+local ChangeColorBtn = Instance.new("TextButton")
+ChangeColorBtn.Size = UDim2.new(1, -40, 0, 32)
+ChangeColorBtn.Position = UDim2.new(0, 20, 0, 225)
+ChangeColorBtn.BackgroundColor3 = ColorList[HitboxSettings.CurrentColorIndex].Color
+ChangeColorBtn.Text = "Ganti Warna (Klik)"
+ChangeColorBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ChangeColorBtn.Font = Enum.Font.GothamBold
+ChangeColorBtn.TextSize = 13
+ChangeColorBtn.Parent = MainFrame
+Instance.new("UICorner", ChangeColorBtn).CornerRadius = UDim.new(0, 6)
+
+-- Event untuk siklus ganti warna saat tombol ditekan
+ChangeColorBtn.MouseButton1Click:Connect(function()
+    HitboxSettings.CurrentColorIndex = HitboxSettings.CurrentColorIndex + 1
+    if HitboxSettings.CurrentColorIndex > #ColorList then
+        HitboxSettings.CurrentColorIndex = 1 -- Kembali ke warna awal jika sudah di ujung list
+    end
+    
+    local activeColorData = ColorList[HitboxSettings.CurrentColorIndex]
+    ColorLabel.Text = "Hitbox Color: " .. activeColorData.Name
+    ChangeColorBtn.BackgroundColor3 = activeColorData.Color
+end)
+
+print("Hitbox Script with Color Changer Loaded Successfully!")
