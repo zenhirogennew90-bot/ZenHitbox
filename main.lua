@@ -6,16 +6,68 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- Konfigurasi Pengaturan Hitbox & Warna
+-- Nama File untuk Menyimpan Konfigurasi
+local ConfigFileName = "HitboxExpander_Config.json"
+
+-- Konfigurasi Default Hitbox (Maksimal Size ditingkatkan ke 200)
 local HitboxSettings = {
-    Enabled = true,          -- Hitbox Expander (Toggle On)
-    ShowHitbox = false,      -- Show Hitbox (Toggle Off)
-    Size = 25,               -- Hitbox Size
-    Transparency = 0.7,      -- Hitbox Transparency
-    CurrentColorIndex = 1    -- Indeks warna aktif
+    Enabled = true,
+    ShowHitbox = false,
+    Size = 50, -- Ukuran default disesuaikan proporsional
+    Transparency = 0.7,
+    CurrentColorIndex = 1
 }
 
--- Daftar Pilihan Warna (Ungu, Merah, Biru, Hijau, Kuning, Putih)
+-- Fungsi untuk Menyimpan Config (Save)
+local function SaveConfig()
+    if writefile then
+        local success, encoded = pcall(function()
+            return string.format('{"Enabled":%s,"ShowHitbox":%s,"Size":%d,"Transparency":%f,"CurrentColorIndex":%d}',
+                tostring(HitboxSettings.Enabled),
+                tostring(HitboxSettings.ShowHitbox),
+                HitboxSettings.Size,
+                HitboxSettings.Transparency,
+                HitboxSettings.CurrentColorIndex
+            )
+        end)
+        if success then
+            writefile(ConfigFileName, encoded)
+        end
+    end
+end
+
+-- Fungsi untuk Memuat Config (Load)
+local function LoadConfig()
+    if readfile and isfile and isfile(ConfigFileName) then
+        local success, decoded = pcall(function()
+            local content = readfile(ConfigFileName)
+            local enabled = content:match('"Enabled":%s*(%a+)') == "true"
+            local showHitbox = content:match('"ShowHitbox":%s*(%a+)') == "true"
+            local size = tonumber(content:match('"Size":%s*(%d+)'))
+            local transparency = tonumber(content:match('"Transparency":%s*([%d%.]+)'))
+            local colorIndex = tonumber(content:match('"CurrentColorIndex":%s*(%d+)'))
+            
+            return {
+                Enabled = enabled,
+                ShowHitbox = showHitbox,
+                Size = size,
+                Transparency = transparency,
+                CurrentColorIndex = colorIndex
+            }
+        end)
+        if success and decoded then
+            if decoded.Enabled ~= nil then HitboxSettings.Enabled = decoded.Enabled end
+            if decoded.ShowHitbox ~= nil then HitboxSettings.ShowHitbox = decoded.ShowHitbox end
+            if decoded.Size ~= nil then HitboxSettings.Size = decoded.Size end
+            if decoded.Transparency ~= nil then HitboxSettings.Transparency = decoded.Transparency end
+            if decoded.CurrentColorIndex ~= nil then HitboxSettings.CurrentColorIndex = decoded.CurrentColorIndex end
+        end
+    end
+end
+
+LoadConfig()
+
+-- Daftar Pilihan Warna
 local ColorList = {
     {Name = "Ungu", Color = Color3.fromRGB(147, 51, 234)},
     {Name = "Merah", Color = Color3.fromRGB(239, 68, 68)},
@@ -25,7 +77,7 @@ local ColorList = {
     {Name = "Putih", Color = Color3.fromRGB(255, 255, 255)}
 }
 
--- Fungsi Utama untuk Memperbesar Hitbox Karakter Lain
+-- Fungsi Utama Hitbox
 local function applyHitbox(character)
     if not character then return end
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
@@ -36,7 +88,6 @@ local function applyHitbox(character)
             
             if HitboxSettings.ShowHitbox then
                 humanoidRootPart.Transparency = HitboxSettings.Transparency
-                -- Menggunakan warna yang dipilih dari daftar
                 humanoidRootPart.Color = ColorList[HitboxSettings.CurrentColorIndex].Color
                 humanoidRootPart.Material = Enum.Material.Neon
             else
@@ -51,7 +102,6 @@ local function applyHitbox(character)
     end
 end
 
--- Loop untuk Memantau Pemain Lain
 RunService.RenderStepped:Connect(function()
     if not HitboxSettings.Enabled then return end
     
@@ -65,24 +115,23 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ==========================================
--- PEMBUATAN UI TEMA HITAM - UNGU (MODERN)
+-- PEMBUATAN UI FLOATING (TEMA HITAM - UNGU)
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "HitboxExpanderUI"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
--- Diperbesar sedikit tingginya (320px) untuk menampung tombol ganti warna
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 320, 0, 310)
 MainFrame.Position = UDim2.new(0.5, -160, 0.5, -155)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22) -- Hitam Elegan
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
 MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = MainFrame
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
 -- Header Menu
 local Header = Instance.new("Frame")
@@ -91,12 +140,10 @@ Header.BackgroundColor3 = Color3.fromRGB(26, 26, 33)
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
 
-local HeaderCorner = Instance.new("UICorner")
-HeaderCorner.CornerRadius = UDim.new(0, 8)
-HeaderCorner.Parent = Header
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Size = UDim2.new(1, -70, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "❤️ Hitbox Expander"
@@ -106,7 +153,41 @@ Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
--- Fungsi Pembuat Tombol Toggle
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -34, 0.5, -13)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 12
+CloseBtn.Parent = Header
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
+
+local OpenButton = Instance.new("TextButton")
+OpenButton.Size = UDim2.new(0, 45, 0, 45)
+OpenButton.Position = UDim2.new(0, 20, 0, 200)
+OpenButton.BackgroundColor3 = Color3.fromRGB(147, 51, 234)
+OpenButton.Text = "UI"
+OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.TextSize = 14
+OpenButton.Visible = false
+OpenButton.Active = true
+OpenButton.Draggable = true
+OpenButton.Parent = ScreenGui
+Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(1, 0)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenButton.Visible = true
+end)
+
+OpenButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenButton.Visible = false
+end)
+
 local function createToggle(name, defaultState, callback, yPos)
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(0, 200, 0, 30)
@@ -127,9 +208,7 @@ local function createToggle(name, defaultState, callback, yPos)
     ToggleBtn.AutoButtonColor = false
     ToggleBtn.Parent = MainFrame
 
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(1, 0)
-    BtnCorner.Parent = ToggleBtn
+    Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
 
     local Circle = Instance.new("Frame")
     Circle.Size = UDim2.new(0, 16, 0, 16)
@@ -137,14 +216,13 @@ local function createToggle(name, defaultState, callback, yPos)
     Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Circle.Parent = ToggleBtn
 
-    local CircleCorner = Instance.new("UICorner")
-    CircleCorner.CornerRadius = UDim.new(1, 0)
-    CircleCorner.Parent = Circle
+    Instance.new("UICorner", Circle).CornerRadius = UDim.new(1, 0)
 
     local active = defaultState
     ToggleBtn.MouseButton1Click:Connect(function()
         active = not active
         callback(active)
+        SaveConfig()
         
         if active then
             ToggleBtn.BackgroundColor3 = Color3.fromRGB(147, 51, 234)
@@ -156,7 +234,6 @@ local function createToggle(name, defaultState, callback, yPos)
     end)
 end
 
--- Render Toggle 1 & 2
 createToggle("Hitbox Expander", HitboxSettings.Enabled, function(state)
     HitboxSettings.Enabled = state
 end, 55)
@@ -165,7 +242,7 @@ createToggle("Show Hitbox", HitboxSettings.ShowHitbox, function(state)
     HitboxSettings.ShowHitbox = state
 end, 100)
 
--- Hitbox Size Controls
+-- Hitbox Size Controls (Maksimal 200)
 local SizeLabel = Instance.new("TextLabel")
 SizeLabel.Size = UDim2.new(0, 200, 0, 20)
 SizeLabel.Position = UDim2.new(0, 20, 0, 140)
@@ -186,7 +263,8 @@ SizeBarBg.Parent = MainFrame
 Instance.new("UICorner", SizeBarBg).CornerRadius = UDim.new(1, 0)
 
 local SizeBarFill = Instance.new("Frame")
-SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 100, 0, 1, 0)
+-- Proporsi bar dibagi 200 agar akurat dengan batas maksimal baru
+SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 200, 0, 1, 0)
 SizeBarFill.BackgroundColor3 = Color3.fromRGB(147, 51, 234)
 SizeBarFill.BorderSizePixel = 0
 SizeBarFill.Parent = SizeBarBg
@@ -213,24 +291,24 @@ BtnMin.Parent = MainFrame
 Instance.new("UICorner", BtnMin).CornerRadius = UDim.new(0, 4)
 
 BtnPlus.MouseButton1Click:Connect(function()
-    if HitboxSettings.Size < 100 then
-        HitboxSettings.Size = HitboxSettings.Size + 5
+    if HitboxSettings.Size < 200 then
+        HitboxSettings.Size = HitboxSettings.Size + 10 -- Naik 10 satuan per klik agar cepat
         SizeLabel.Text = "Hitbox Size: " .. HitboxSettings.Size
-        SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 100, 0, 1, 0)
+        SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 200, 0, 1, 0)
+        SaveConfig()
     end
 end)
 
 BtnMin.MouseButton1Click:Connect(function()
     if HitboxSettings.Size > 5 then
-        HitboxSettings.Size = HitboxSettings.Size - 5
+        HitboxSettings.Size = HitboxSettings.Size - 10
         SizeLabel.Text = "Hitbox Size: " .. HitboxSettings.Size
-        SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 100, 0, 1, 0)
+        SizeBarFill.Size = UDim2.new(HitboxSettings.Size / 200, 0, 1, 0)
+        SaveConfig()
     end
 end)
 
--- ==========================================
--- FITUR BARU: TOMBOL GANTI WARNA HITBOX
--- ==========================================
+-- Tombol Ganti Warna Hitbox
 local ColorLabel = Instance.new("TextLabel")
 ColorLabel.Size = UDim2.new(0, 200, 0, 20)
 ColorLabel.Position = UDim2.new(0, 20, 0, 195)
@@ -253,16 +331,16 @@ ChangeColorBtn.TextSize = 13
 ChangeColorBtn.Parent = MainFrame
 Instance.new("UICorner", ChangeColorBtn).CornerRadius = UDim.new(0, 6)
 
--- Event untuk siklus ganti warna saat tombol ditekan
 ChangeColorBtn.MouseButton1Click:Connect(function()
     HitboxSettings.CurrentColorIndex = HitboxSettings.CurrentColorIndex + 1
     if HitboxSettings.CurrentColorIndex > #ColorList then
-        HitboxSettings.CurrentColorIndex = 1 -- Kembali ke warna awal jika sudah di ujung list
+        HitboxSettings.CurrentColorIndex = 1
     end
     
     local activeColorData = ColorList[HitboxSettings.CurrentColorIndex]
     ColorLabel.Text = "Hitbox Color: " .. activeColorData.Name
     ChangeColorBtn.BackgroundColor3 = activeColorData.Color
+    SaveConfig()
 end)
 
-print("Hitbox Script with Color Changer Loaded Successfully!")
+print("Hitbox Script (Max Size 200) Loaded Successfully!")
