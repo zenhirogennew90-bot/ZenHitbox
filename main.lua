@@ -1,6 +1,6 @@
 -- =================================================================
--- [[ ELITE PREMIUM HITBOX MASTER V3 - NYXAR VANE ARCHITECTURE ]]
--- [[ Optimized for Mobile Delta Executor - Compact, Square & Responsive ]]
+-- [[ ULTIMATE ELITE HITBOX MASTER V4 - NYXAR VANE ARCHITECTURE ]]
+-- [[ Fixed UI Overlap & Clipping with Automatic UIListLayout Engine ]]
 -- =================================================================
 
 local Players = game:GetService("Players")
@@ -21,13 +21,13 @@ local HBConfig = {
 }
 
 -- Hapus UI lama jika ada agar tidak duplikat
-if CoreGui:FindFirstChild("NyxarCompactHitboxUI") then
-    CoreGui.NyxarCompactHitboxUI:Destroy()
+if CoreGui:FindFirstChild("NyxarFixedHitboxUI") then
+    CoreGui.NyxarFixedHitboxUI:Destroy()
 end
 
 -- Main ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NyxarCompactHitboxUI"
+ScreenGui.Name = "NyxarFixedHitboxUI"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -56,12 +56,12 @@ FloatStroke.Thickness = 2.2
 FloatStroke.Parent = FloatingBtn
 
 -- =================================================================
--- 2. MAIN MENU PANEL (Persegi, Compact, Dilengkapi Scrolling)
+-- 2. MAIN MENU PANEL (Persegi, Compact & Rapi)
 -- =================================================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainPanel"
-MainFrame.Size = UDim2.new(0, 300, 0, 360) -- Ukuran lebih kecil & persegi
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -180)
+MainFrame.Size = UDim2.new(0, 310, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -155, 0.5, -200)
 MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -87,9 +87,9 @@ TitleLabel.Size = UDim2.new(1, -40, 1, 0)
 TitleLabel.Position = UDim2.new(0, 14, 0, 0)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.Text = "⚡ Hitbox Master"
+TitleLabel.Text = "⚡ Hitbox Master Elite"
 TitleLabel.TextColor3 = Color3.fromRGB(245, 245, 255)
-TitleLabel.TextSize = 16
+TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = Header
 
@@ -104,16 +104,25 @@ CloseBtn.TextSize = 13
 CloseBtn.Parent = Header
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
--- Scrolling Container (Agar rapi dan tidak overflow)
+-- =================================================================
+-- 3. SCROLLING CONTAINER DENGAN UIListLayout (Anti-Overlap)
+-- =================================================================
 local Container = Instance.new("ScrollingFrame")
-Container.Size = UDim2.new(1, -16, 1, -55)
-Container.Position = UDim2.new(0, 8, 0, 50)
+Container.Name = "ControlContainer"
+Container.Size = UDim2.new(1, -20, 1, -55)
+Container.Position = UDim2.new(0, 10, 0, 50)
 Container.BackgroundTransparency = 1
 Container.BorderSizePixel = 0
-Container.CanvasSize = UDim2.new(0, 0, 0, 440) -- Tinggi konten di dalam scroll
+Container.CanvasSize = UDim2.new(0, 0, 0, 0) -- Otomatis diatur oleh UIListLayout
+Container.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
 Container.ScrollBarThickness = 3
 Container.ScrollBarImageColor3 = Color3.fromRGB(138, 43, 226)
 Container.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 10) -- Jarak antar elemen sangat rapi
+UIListLayout.Parent = Container
 
 -- Logika Buka/Tutup Menu
 local menuIsOpen = false
@@ -129,35 +138,36 @@ CloseBtn.MouseButton1Click:Connect(function()
     FloatStroke.Color = Color3.fromRGB(138, 43, 226)
 end)
 
--- Helper Fungsi Judul Bagian
-local function createSectionHeader(text, posY)
+-- Helper Fungsi Pembuat Section Header
+local function createSectionHeader(text, order)
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 0, 20)
-    lbl.Position = UDim2.new(0, 0, 0, posY)
+    lbl.Size = UDim2.new(1, 0, 0, 18)
     lbl.BackgroundTransparency = 1
     lbl.Font = Enum.Font.GothamSemibold
     lbl.Text = text
     lbl.TextColor3 = Color3.fromRGB(160, 160, 185)
     lbl.TextSize = 11
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.LayoutOrder = order
     lbl.Parent = Container
     return lbl
 end
 
 -- =================================================================
--- 3. KOMPONEN UI DI DALAM CONTAINER
+-- 4. KOMPONEN-KOMPONEN MENU UTAMA
 -- =================================================================
 
--- A. Status Hitbox Toggle
-createSectionHeader("STATUS EKSEKUSI", 5)
+-- A. Status Eksekusi Hitbox
+createSectionHeader("STATUS EKSEKUSI", 1)
 local MasterToggle = Instance.new("TextButton")
 MasterToggle.Size = UDim2.new(1, 0, 0, 38)
-MasterToggle.Position = UDim2.new(0, 0, 0, 26)
 MasterToggle.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
 MasterToggle.Font = Enum.Font.GothamBold
 MasterToggle.Text = "OFF"
 MasterToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
-MasterToggle.TextSize, MasterToggle.Parent = 13, Container
+MasterToggle.TextSize = 13
+MasterToggle.LayoutOrder = 2
+MasterToggle.Parent = Container
 Instance.new("UICorner", MasterToggle).CornerRadius = UDim.new(0, 8)
 
 MasterToggle.MouseButton1Click:Connect(function()
@@ -173,16 +183,17 @@ MasterToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- B. Visual Tampilkan/Sembunyikan Hitbox
-createSectionHeader("TAMPILAN VISUAL", 72)
+-- B. Tampilan Visual
+createSectionHeader("TAMPILAN VISUAL", 3)
 local VisualToggle = Instance.new("TextButton")
 VisualToggle.Size = UDim2.new(1, 0, 0, 36)
-VisualToggle.Position = UDim2.new(0, 0, 0, 93)
 VisualToggle.BackgroundColor3 = Color3.fromRGB(22, 30, 45)
 VisualToggle.Font = Enum.Font.GothamSemibold
 VisualToggle.Text = "Visual: ON (Terlihat)"
 VisualToggle.TextColor3 = Color3.fromRGB(100, 180, 255)
-VisualToggle.TextSize, VisualToggle.Parent = 12, Container
+VisualToggle.TextSize = 12
+VisualToggle.LayoutOrder = 4
+VisualToggle.Parent = Container
 Instance.new("UICorner", VisualToggle).CornerRadius = UDim.new(0, 8)
 
 VisualToggle.MouseButton1Click:Connect(function()
@@ -196,12 +207,12 @@ VisualToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- C. Pilihan Warna Hitbox (Ungu, Biru, Merah)
-createSectionHeader("WARNA HITBOX", 137)
+-- C. Warna Hitbox (Ungu, Biru, Merah)
+createSectionHeader("WARNA HITBOX", 5)
 local ColorContainer = Instance.new("Frame")
 ColorContainer.Size = UDim2.new(1, 0, 0, 36)
-ColorContainer.Position = UDim2.new(0, 0, 0, 158)
 ColorContainer.BackgroundTransparency = 1
+ColorContainer.LayoutOrder = 6
 ColorContainer.Parent = Container
 
 local colors = {
@@ -241,11 +252,11 @@ for i, col in ipairs(colors) do
 end
 
 -- D. Slider Ukuran Hitbox
-local SizeHeader = createSectionHeader("UKURAN HITBOX [Studs: 10]", 202)
+local SizeHeader = createSectionHeader("UKURAN HITBOX [Studs: 10]", 7)
 local SizeBg = Instance.new("Frame")
-SizeBg.Size = UDim2.new(1, 0, 0, 22)
-SizeBg.Position = UDim2.new(0, 0, 0, 223)
+SizeBg.Size = UDim2.new(1, 0, 0, 24)
 SizeBg.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
+SizeBg.LayoutOrder = 8
 SizeBg.Parent = Container
 Instance.new("UICorner", SizeBg).CornerRadius = UDim.new(0, 6)
 
@@ -255,12 +266,12 @@ SizeFill.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
 SizeFill.Parent = SizeBg
 Instance.new("UICorner", SizeFill).CornerRadius = UDim.new(0, 6)
 
--- E. Slider Transparansi Hitbox (Diperbaiki & Dioptimalkan agar bekerja akurat)
-local TransHeader = createSectionHeader("TRANSPARANSI VISUAL [0.5]", 255)
+-- E. Slider Transparansi Hitbox
+local TransHeader = createSectionHeader("TRANSPARANSI VISUAL [0.5]", 9)
 local TransBg = Instance.new("Frame")
-TransBg.Size = UDim2.new(1, 0, 0, 22)
-TransBg.Position = UDim2.new(0, 0, 0, 276)
+TransBg.Size = UDim2.new(1, 0, 0, 24)
 TransBg.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
+TransBg.LayoutOrder = 10
 TransBg.Parent = Container
 Instance.new("UICorner", TransBg).CornerRadius = UDim.new(0, 6)
 
@@ -271,7 +282,7 @@ TransFill.Parent = TransBg
 Instance.new("UICorner", TransFill).CornerRadius = UDim.new(0, 6)
 
 -- =================================================================
--- 4. ROBUST TOUCH SLIDER LOGIC (Fix Slider Transparansi & Ukuran)
+-- 5. ROBUST TOUCH SLIDER LOGIC (Mulus & Akurat di HP)
 -- =================================================================
 local activeSizeInput = nil
 local activeTransInput = nil
@@ -308,7 +319,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- =================================================================
--- 5. CORE ENGINE LOOP (Eksekusi Hitbox & Transparansi Akurat)
+-- 6. CORE ENGINE LOOP (Eksekusi Hitbox & Render Aman)
 -- =================================================================
 RunService.RenderStepped:Connect(function()
     pcall(function()
@@ -328,7 +339,7 @@ RunService.RenderStepped:Connect(function()
                             hrp.Color = HBConfig.Color
                             hrp.Material = Enum.Material.Neon
                         else
-                            hrp.Transparency = 1 -- Hitbox jalan, visual tersembunyi total
+                            hrp.Transparency = 1 -- Hitbox berfungsi normal, tapi visual tidak terlihat
                         end
                     else
                         hrp.Size = Vector3.new(2, 2, 1)
@@ -340,4 +351,4 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
-print("⚡ Elite Compact Hitbox Master V3 Loaded Successfully!")
+print("⚡ Elite Hitbox Master V4 (Fixed Layout) Loaded Successfully!")
